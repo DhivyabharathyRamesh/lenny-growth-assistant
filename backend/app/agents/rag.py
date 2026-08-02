@@ -29,7 +29,7 @@ def get_vectorstore():
     print("Loaded existing Chroma vectorstore")
     return vectorstore
 
-def retrieve(query: str, k: int = 5) -> str:
+def retrieve(query: str, k: int = 3) -> str:
     try:
         vs = get_vectorstore()
         docs = vs.similarity_search(query, k=k)
