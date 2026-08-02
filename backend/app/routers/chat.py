@@ -1,32 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 import uuid
-import httpx
 import re
 
 from app.database import get_db
 from app import models, schemas
-from app.config import get_settings
 from app.agents.rag import retrieve
+from app.services.llm import generate_completion
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
-settings = get_settings()
 
-async def call_ollama(prompt: str, max_tokens: int = 1200) -> str:
-    url = f"{settings.OLLAMA_BASE_URL}/api/generate"
-    payload = {
-        "model": settings.OLLAMA_MODEL,
-        "prompt": prompt,
-        "stream": False,
-        "options": {
-    "temperature": 0.5,
-    "num_predict": 700   # reduced from 1200-1800
-}
-    }
-    async with httpx.AsyncClient(timeout=180.0) as client:
-        response = await client.post(url, json=payload)
-        response.raise_for_status()
-        return response.json().get("response", "No response")
 
 @router.post("/", response_model=schemas.ChatResponse)
 async def chat(request: schemas.ChatRequest, db: Session = Depends(get_db)):
@@ -81,7 +64,7 @@ Context from Lenny's transcripts:
 Topic / Request: {request.message}
 
 Now write the full essay:"""
-        ai_reply = await call_ollama(prompt, max_tokens=1800)
+        ai_reply = await generate_completion(prompt, max_tokens=1800)
 
     elif any(word in message_lower for word in ["artifact", "html", "component", "generate ui", "markdown document"]):
         # === ARTIFACT SKILL ===
@@ -97,7 +80,7 @@ Context:
 {context}
 
 User request: {request.message}"""
-        ai_reply = await call_ollama(prompt, max_tokens=1500)
+        ai_reply = await generate_completion(prompt, max_tokens=1500)
 
         # Try to extract the artifact
         match = re.search(r"```(?:html|markdown|md)?\s*(.*?)```", ai_reply, re.DOTALL)
@@ -117,14 +100,15 @@ Context from Lenny:
 Question: {request.message}
 
 Answer:"""
-        ai_reply = await call_ollama(prompt)
+        ai_reply = await generate_completion(prompt, max_tokens=700)
 
     # 4. Save AI reply
     db.add(models.Message(
         id=str(uuid.uuid4()),
         session_id=session_id,
         role="assistant",
-        content=ai_reply
+        content=ai_reply,
+        artifact=artifact,
     ))
     db.commit()
 

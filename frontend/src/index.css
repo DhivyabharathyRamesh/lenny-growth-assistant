@@ -3,6 +3,27 @@
 body {
   margin: 0;
   font-family: Inter, system-ui, -apple-system, sans-serif;
-  background-color: #0f0f0f;
+  background-color: #0a0a0a;
   color: #e5e5e5;
+}
+
+.sidebar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #404040 transparent;
+}
+
+.chat-markdown pre {
+  overflow-x: auto;
+  border-radius: 0.5rem;
+  background: #171717;
+  padding: 0.75rem 1rem;
+}
+
+.chat-markdown code {
+  font-size: 0.85em;
+}
+
+.chat-markdown p {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
 }

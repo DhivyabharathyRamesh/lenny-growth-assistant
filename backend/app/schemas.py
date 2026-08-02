@@ -12,6 +12,7 @@ class MessageCreate(MessageBase):
 
 class MessageOut(MessageBase):
     id: str
+    artifact: Optional[str] = None
     created_at: datetime
 
     class Config:
@@ -23,6 +24,16 @@ class SessionBase(BaseModel):
 
 class SessionCreate(SessionBase):
     pass
+
+class SessionSummary(SessionBase):
+    """Session list item without messages (keeps /sessions/ fast)."""
+
+    id: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
 
 class SessionOut(SessionBase):
     id: str
